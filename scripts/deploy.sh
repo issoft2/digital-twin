@@ -13,10 +13,6 @@ echo "📦 Building Lambda package..."
 
 # 2. Terraform workspace & apply
 cd terraform
-terraform init -input=false
-
-# Old line:
-terraform init -input=false
 
 # New lines:
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -62,8 +58,9 @@ cd ..
 
 # 4. Final messages
 echo -e "\n✅ Deployment complete!"
-echo "🌐 CloudFront URL : $(terraform -chdir=terraform output -raw cloudfront_url)"
-if [ -n "$CUSTOM_URL" ]; then
-  echo "🔗 Custom domain  : $CUSTOM_URL"
-fi
-echo "📡 API Gateway    : $API_URL"
+FRONTEND_URL="http://${FRONTEND_BUCKET}.s3-website.${AWS_REGION}.amazonaws.com"
+echo "🌐 Frontend URL   : $FRONTEND_URL"
+# if [ -n "$CUSTOM_URL" ]; then
+#   echo "🔗 Custom domain  : $CUSTOM_URL"
+# fi
+# echo "📡 API Gateway    : $API_URL"
