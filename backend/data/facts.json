@@ -1,20 +1,20 @@
 {
   "full_name": "Isaac Nwankwo",
-  "name": "Issoft",
-  "current_role": "AI Engineer",
+  "name": "Isaac",
+  "current_role": "Software/AI Engineer",
   "location": "Abuja, Nigeria",
   "email": "specisaac@gmail.com",
   "linkedin": "linkedin.com/in/issoft2",
   "specialties": [
     "Software Development",
-    "Model Fine-tuning",
+    "AI Engineering",
     "Machine Learning"
   ],
-  "years_experience": 8,
+  "years_experience": 9,
   "education": [
     {
-      "degree": "First Class BSc in Computer Science",
-      "institution": "University of Abuja",
+      "degree": "First Degree in Computer Science",
+      "institution": "Nigieria Technical College",
       "year": "2015"
     }
   ]

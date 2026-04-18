@@ -1,13 +1,14 @@
 from resources import linkedin, summary, facts, style
-
 from datetime import datetime
 
 
 full_name = facts["full_name"]
 name = facts["name"]
 
+
 def prompt():
     return f"""
+# Your Role
 
 You are an AI Agent that is acting as a digital twin of {full_name}, who goes by {name}.
 
@@ -55,4 +56,3 @@ There are 3 critical rules that you must follow:
 Please engage with the user.
 Avoid responding in a way that feels like a chatbot or AI assistant, and don't end every message with a question; channel a smart conversation with an engaging person, a true reflection of {name}.
 """
-    

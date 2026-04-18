@@ -1,4 +1,3 @@
-# Data source to get current AWS account ID
 data "aws_caller_identity" "current" {}
 
 locals {
@@ -133,7 +132,7 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      CORS_ORIGINS     = var.use_custom_domain ? "https://${var.root_domain},https://www.${var.root_domain}" : "https://${aws_cloudfront_distribution.main.domain_name}"
+      CORS_ORIGINS     = "*"  #var.use_custom_domain ? "https://${var.root_domain},https://www.${var.root_domain}" : "https://${aws_cloudfront_distribution.main.domain_name}"
       S3_BUCKET        = aws_s3_bucket.memory.id
       USE_S3           = "true"
       BEDROCK_MODEL_ID = var.bedrock_model_id
@@ -141,7 +140,7 @@ resource "aws_lambda_function" "api" {
   }
 
   # Ensure Lambda waits for the distribution to exist
-  depends_on = [aws_cloudfront_distribution.main]
+  # depends_on = [aws_cloudfront_distribution.main]
 }
 
 # API Gateway HTTP API
@@ -206,63 +205,6 @@ resource "aws_lambda_permission" "api_gw" {
 }
 
 # CloudFront distribution
-resource "aws_cloudfront_distribution" "main" {
-  aliases = local.aliases
-  
-  viewer_certificate {
-    acm_certificate_arn            = var.use_custom_domain ? aws_acm_certificate.site[0].arn : null
-    cloudfront_default_certificate = var.use_custom_domain ? false : true
-    ssl_support_method             = var.use_custom_domain ? "sni-only" : null
-    minimum_protocol_version       = "TLSv1.2_2021"
-  }
-
-  origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = "S3-${aws_s3_bucket.frontend.id}"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-  tags                = local.common_tags
-
-  default_cache_behavior {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.id}"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-}
 
 # Optional: Custom domain configuration (only created when use_custom_domain = true)
 data "aws_route53_zone" "root" {
@@ -273,7 +215,7 @@ data "aws_route53_zone" "root" {
 
 resource "aws_acm_certificate" "site" {
   count                     = var.use_custom_domain ? 1 : 0
-  provider                  = aws.us_east_1
+  provider                  = aws.eu_north_1
   domain_name               = var.root_domain
   subject_alternative_names = ["www.${var.root_domain}"]
   validation_method         = "DNS"
@@ -296,61 +238,94 @@ resource "aws_route53_record" "site_validation" {
 
 resource "aws_acm_certificate_validation" "site" {
   count           = var.use_custom_domain ? 1 : 0
-  provider        = aws.us_east_1
+  provider        = aws.eu_north_1
   certificate_arn = aws_acm_certificate.site[0].arn
   validation_record_fqdns = [
     for r in aws_route53_record.site_validation : r.fqdn
   ]
 }
 
-resource "aws_route53_record" "alias_root" {
-  count   = var.use_custom_domain ? 1 : 0
-  zone_id = data.aws_route53_zone.root[0].zone_id
-  name    = var.root_domain
-  type    = "A"
+# resource "aws_route53_record" "alias_root" {
+#  count   = var.use_custom_domain ? 1 : 0
+# zone_id = data.aws_route53_zone.root[0].zone_id
+#  name    = var.root_domain
+# type    = "A"
 
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
-  }
+ # alias {
+   # name                   = aws_cloudfront_distribution.main.domain_name
+   # zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+  #  evaluate_target_health = false
+  # }
+# }
+
+# resource "aws_route53_record" "alias_root_ipv6" {
+#  count   = var.use_custom_domain ? 1 : 0
+#  zone_id = data.aws_route53_zone.root[0].zone_id
+#  name    = var.root_domain
+#  type    = "AAAA"
+
+#  alias {
+    # name                   = aws_cloudfront_distribution.main.domain_name
+    # zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+#    evaluate_target_health = false
+#  }
+# }
+
+# resource "aws_route53_record" "alias_www" {
+#  count   = var.use_custom_domain ? 1 : 0
+#  zone_id = data.aws_route53_zone.root[0].zone_id
+#  name    = "www.${var.root_domain}"
+#  type    = "A"
+
+#  alias {
+   # name                   = aws_cloudfront_distribution.main.domain_name
+   # zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+#    evaluate_target_health = false
+#  }
+# }
+
+# resource "aws_route53_record" "alias_www_ipv6" {
+#  count   = var.use_custom_domain ? 1 : 0
+#  zone_id = data.aws_route53_zone.root[0].zone_id
+#  name    = "www.${var.root_domain}"
+#  type    = "AAAA"
+
+#  alias {
+  #  name                   = aws_cloudfront_distribution.main.domain_name
+  #  zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+#    evaluate_target_health = false
+#  }
+# }
+
+#Step 5: Define Outputs
+#Create terraform/outputs.tf:
+
+output "api_gateway_url" {
+  description = "URL of the API Gateway"
+  value       = aws_apigatewayv2_api.main.api_endpoint
 }
 
-resource "aws_route53_record" "alias_root_ipv6" {
-  count   = var.use_custom_domain ? 1 : 0
-  zone_id = data.aws_route53_zone.root[0].zone_id
-  name    = var.root_domain
-  type    = "AAAA"
+# output "cloudfront_url" {
+#  description = "URL of the CloudFront distribution"
+#  value       = "https://${aws_cloudfront_distribution.main.domain_name}"
+# }
 
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
-  }
+output "s3_frontend_bucket" {
+  description = "Name of the S3 bucket for frontend"
+  value       = aws_s3_bucket.frontend.id
 }
 
-resource "aws_route53_record" "alias_www" {
-  count   = var.use_custom_domain ? 1 : 0
-  zone_id = data.aws_route53_zone.root[0].zone_id
-  name    = "www.${var.root_domain}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
-  }
+output "s3_memory_bucket" {
+  description = "Name of the S3 bucket for memory storage"
+  value       = aws_s3_bucket.memory.id
 }
 
-resource "aws_route53_record" "alias_www_ipv6" {
-  count   = var.use_custom_domain ? 1 : 0
-  zone_id = data.aws_route53_zone.root[0].zone_id
-  name    = "www.${var.root_domain}"
-  type    = "AAAA"
+output "lambda_function_name" {
+  description = "Name of the Lambda function"
+  value       = aws_lambda_function.api.function_name
+}
 
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
-  }
+output "custom_domain_url" {
+  description = "Root URL of the production site"
+  value       = var.use_custom_domain ? "https://${var.root_domain}" : ""
 }

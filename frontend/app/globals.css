@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Smooth scrolling animation for keyframes */
+/* Smooth scrolling animation keyframe */
 @keyframes bounce {
   0%,
   80%,
