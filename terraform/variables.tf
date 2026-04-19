@@ -16,10 +16,22 @@ variable "environment" {
   }
 }
 
-variable "bedrock_model_id" {
-  description = "Bedrock model ID"
+#variable "bedrock_model_id" {
+#  description = "Bedrock model ID"
+#  type        = string
+#  default     = "amazon.nova-micro-v1:0"
+# }
+
+variable "openai_api_key" {
+  description = "OpenAI API key"
   type        = string
-  default     = "amazon.nova-micro-v1:0"
+  sensitive   = true
+}
+
+variable "openai_model" {
+  description = "OpenAI model to use"
+  type        = string
+  default     = "gpt-4.1-mini"
 }
 
 variable "lambda_timeout" {
